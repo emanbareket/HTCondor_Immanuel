@@ -1,6 +1,6 @@
 # CondorErrorTracker.py usage details
 
-The file CondorErrorTracker.py is a python script that tracks jobs as they transition through states in /var/log/condor/ShadowLog  
+The file CondorErrorTracker.py is a python script that tracks jobs as they transition through states in the HTCondor system by parsing the Shadowlog file in /var/log/condor
 
 *Must be run in a directory with access to ShadowLog, or manually changed to run on a local copy*
  
