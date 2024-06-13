@@ -1,3 +1,11 @@
-# HTCondor_Immanuel
+# CondorErrorTracker.py usage details
 
-The file LogParser.py is a python script that scans through the GlobalEventLog and filters jobs based on whether states were repeated or if any unexpected transitions occurred. It also counts and prints the percentage of these errors. There is currently no input, and the two output files "GEL_Unexpected_Transitions" and "GEL_Repeated_States" are appended to everytime the script is run. The code still needs some cleaning and more features will be added including the ShadowLog state transitions allowing for it to run on that as well.
+The file CondorErrorTracker.py is a python script that tracks jobs as they transition through states in /var/log/condor/ShadowLog
+
+Input file: *can be changed manually to run on a local copy of the ShadowLog*
+/var/log/condor/ShadowLog
+
+
+Output files:
+ErrorClassification.txt - counts number of detected errors at each state for each job
+ErrorLog.txt - raw text of jobs with detected errors
