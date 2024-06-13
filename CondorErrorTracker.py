@@ -16,11 +16,11 @@ bad_jobs = []
 transitions = { 
     0 : [1, 2, 4], 
     1 : [2],
-    2 : [4, 5],
+    2 : [2, 4, 5],
     3 : [0, 1, 2],
     4 : [5],
-    5 : [6],
-    6 : [5]
+    5 : [5, 6],
+    6 : [5, 6]
 }
 
 states = {
@@ -32,6 +32,7 @@ states = {
     5 : "Terminated",
     6 : "Shadow exit"
 }
+
 # Dictionary mapping ShadowLog text to current state
 state_patterns = [
     r"Initializing a VANILLA shadow", 
@@ -46,7 +47,7 @@ state_patterns = [
     r"going into Hold",
     r"graceful removal of job",
     r"File transfer failed",
-    r"^terminated: exited with status",
+    r"terminated: exited with status",
     r"EXITING WITH STATUS" 
 ]
 
@@ -60,7 +61,8 @@ for line in ShadowLog: # Read every line from ShadowLog determine which job it d
     if not id : continue 
     id = id.group(0)[1:-1]
     if id not in jobs:
-        jobs[id] = {"log" : [], "state" : 0, "errors" : []} 
+        jobs[id] = {"log" : [], "state" : 0, "errors" : {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0}} 
+    jobs[id]["log"].append(line) 
     for i, pattern in enumerate(state_patterns): # Determine which state/transition we are in
         message = re.search(pattern, line)
         if not message : continue
@@ -68,8 +70,8 @@ for line in ShadowLog: # Read every line from ShadowLog determine which job it d
            del jobs[id] 
            break 
         current_state = pattern_index[i] 
-        jobs[id]["log"].append(line) 
         error = False
+        # Check if good/bad transition
         if current_state == 2 and jobs[id]["state"] == 4: current_state = 5 
         if current_state not in transitions[jobs[id]["state"]]: error = True
         if current_state == 3:
@@ -79,22 +81,23 @@ for line in ShadowLog: # Read every line from ShadowLog determine which job it d
         if current_state == 0 and i == 1: error = False
         if i == 11 and "status=0" in line: error = False
         if error:
-            jobs[id]["errors"].append(states[jobs[id]["state"]] + " -> " + states[current_state])
+            jobs[id]["errors"][jobs[id]["state"]]+=1
         jobs[id]["state"] = current_state
         break
 count = 0
 for job in jobs:
-    if jobs[job]["errors"] == []:
+    if jobs[job]["errors"] == {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0}:
         continue
     else:
         count += 1
         for line in jobs[job]["log"]:
             ErrorLog.write(line)
-            #ErrorLog.write('\n')
-        ErrorIndex.write("bad transitions for job: " + job + "\n")
+        ErrorIndex.write("possible errors for job: " + job + "\n")
         for error in jobs[job]["errors"]:
-            ErrorIndex.write(error + "\n")
+            ErrorIndex.write(states[error] + ": " + str(jobs[job]["errors"][error]) + "\n")
         ErrorIndex.write("______________________________________________\n")
-print("Error rate: " + str(count/len(jobs)) + "% out of " + str(len(jobs)) + " jobs")
+print("Error rate: " + str(count/len(jobs)*100) + " % out of " + str(len(jobs)) + " jobs")
 
-
+ShadowLog.close()
+ErrorLog.close()
+ErrorIndex.close()
